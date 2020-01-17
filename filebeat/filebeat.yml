@@ -1,0 +1,8 @@
+filebeat.registry_file: /usr/share/filebeat/data/registry
+filebeat.inputs:
+  - type: log
+    paths:
+      /usr/share/gerritlogs/*_log
+    scan_frequency: 10s
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]

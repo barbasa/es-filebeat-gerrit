@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+
+  gerrit-green:
+    image: gerritcodereview/gerrit
+    networks:
+      gerrit-net:
+        ipv4_address: 172.19.0.5
+    volumes:
+      - "./logs-green:/var/gerrit/logs"
+    ports:
+      - "8081:8080"
+      - "29419:29418"
+
+  elasticsearch:
+    build: elasticsearch
+    environment:
+      - http.host=0.0.0.0
+    networks:
+      - gerrit-net
+    volumes:
+      - es-indexes:/usr/share/elasticsearch/data
+    ports:
+     - "9200:9200"
+
+  filebeat:
+    container_name: filebeat
+    hostname: filebeat
+    user: root
+    build:
+      context: ./filebeat
+    volumes:
+      - "./logs-green:/usr/share/gerritlogs:ro"
+      #Named volume fsdata. This is used to persist the registry file between restarts, so to avoid data duplication
+      - fbdata:/usr/share/filebeat/data/
+    networks:
+      - gerrit-net
+    command: filebeat -e -E -strict.perms=false
+    restart: on-failure
+    depends_on:
+      - elasticsearch
+
+networks:
+  gerrit-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.19.0.0/16
+
+volumes:
+  lucene-green:
+  fbdata:
+  es-indexes:
+    driver: local
